@@ -37,3 +37,17 @@ module.exports.validationCard = celebrate({
     link: Joi.string().required().regex(validURL),
   }),
 });
+
+const cardIdJoi = { cardId: Joi.string().length(24).hex().required() };
+
+module.exports.validationDeleteCard = celebrate({
+  params: Joi.object().keys(cardIdJoi),
+});
+
+module.exports.validationAddLike = celebrate({
+  params: Joi.object().keys(cardIdJoi),
+});
+
+module.exports.validationDeleteLike = celebrate({
+  params: Joi.object().keys(cardIdJoi),
+});
