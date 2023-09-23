@@ -38,6 +38,13 @@ module.exports.validationCard = celebrate({
   }),
 });
 
+module.exports.validationLogin = celebrate({
+  body: Joi.object().keys({
+    email: Joi.string().required().email(),
+    password: Joi.string().required().min(8),
+  }),
+});
+
 const cardIdJoi = { cardId: Joi.string().length(24).hex().required() };
 
 module.exports.validationDeleteCard = celebrate({

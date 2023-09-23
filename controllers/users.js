@@ -1,10 +1,10 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/user');
-const BadRequestError = require('../utils/badRequest');
-const UnauthorizedError = require('../utils/unauthorized');
-const NotFoundError = require('../utils/notFound');
-const ConflictError = require('../utils/conflict');
+const BadRequestError = require('../utils/error/badRequest');
+const UnauthorizedError = require('../utils/error/unauthorized');
+const NotFoundError = require('../utils/error/notFound');
+const ConflictError = require('../utils/error/conflict');
 
 module.exports.getUsers = (req, res, next) => {
   User.find({})
@@ -43,7 +43,13 @@ module.exports.createUser = (req, res, next) => {
 };
 
 module.exports.getUserById = (req, res, next) => {
-  User.findById(req.params.id)
+  let userId;
+  if (req.params.id) {
+    userId = req.params.id;
+  } else {
+    userId = req.user._id;
+  }
+  User.findById(userId)
     .then((user) => {
       if (!user) {
         return next(new NotFoundError('Пользователь по указанному _id не найден'));
@@ -82,29 +88,23 @@ module.exports.updateAvatar = (req, res, next) => {
     });
 };
 
-module.exports.getUserInfoById = (req, res, next) => {
-  User.findById(req.user)
-    .then((user) => {
-      if (!user) {
-        return next(new NotFoundError('Пользователь по указанному _id не найден'));
-      }
-      return res.status(200).send(user);
-    })
-    .catch((err) => {
-      if (err.name === 'CastError') {
-        return next(new BadRequestError('Переданы некорректные данные'));
-      }
-      return next(err);
-    });
-};
-
 module.exports.login = (req, res, next) => {
   const { email, password } = req.body;
 
-  User.findUserByCredentials(email, password)
+  return User.findOne({ email }).select('+password')
     .then((user) => {
-      const token = jwt.sign({ _id: user._id }, 'secret-key', { expiresIn: '7d' });
-      res.send(token);
+      if (!user) {
+        return next(new UnauthorizedError('Неправильные почта или пароль'));
+      }
+      return bcrypt.compare(password, user.password)
+        .then((matched) => {
+          if (!matched) {
+            return next(new UnauthorizedError('Неправильные почта или пароль'));
+          }
+          const token = jwt.sign({ _id: user._id }, 'secret-key', { expiresIn: '7d' });
+          res.cookie('jwt', token, { maxAge: 3600000 * 24 * 7, httpOnly: true, sameSite: true });
+          return res.status(200).send({ token });
+        });
     })
-    .catch((err) => next(new UnauthorizedError(err.message)));
+    .catch((err) => next(err));
 };
