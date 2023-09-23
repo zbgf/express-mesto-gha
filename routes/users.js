@@ -5,11 +5,11 @@ const {
   updateProfile,
   updateAvatar,
 } = require('../controllers/users');
-const { validationProfile, validationId, validationAvatar } = require('../utils/validation');
+const { validationProfile, validationAvatar } = require('../utils/validation');
 
 router.get('/users', getUsers);
 router.get('/users/me', getUserById);
-router.get('/users/:id', validationId, getUserById);
+router.get('/users/:id', getUserById);
 router.patch('/users/me', validationProfile, updateProfile);
 router.patch('/users/me/avatar', validationAvatar, updateAvatar);
 
