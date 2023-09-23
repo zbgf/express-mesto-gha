@@ -52,3 +52,9 @@ module.exports.validationAddLike = celebrate({
 module.exports.validationDeleteLike = celebrate({
   params: Joi.object().keys(cardIdJoi),
 });
+
+module.exports.validationId = celebrate({
+  params: Joi.object().keys({
+    id: Joi.string().length(24).hex(),
+  }),
+});
